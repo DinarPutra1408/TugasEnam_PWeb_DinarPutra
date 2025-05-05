@@ -1,4 +1,5 @@
 document.addEventListener('DOMContentLoaded', function() {
+    // Kode untuk buku tamu
     const guestbookForm = document.getElementById('guestbook-form');
     const guestList = document.getElementById('guestbook-list');
     const searchInput = document.getElementById('search-guest');
@@ -7,10 +8,8 @@ document.addEventListener('DOMContentLoaded', function() {
     let guests = JSON.parse(localStorage.getItem('guests')) || [];
     
     function displayGuests(filter = '') {
-        // Kosongkan daftar tamu terlebih dahulu
         guestList.innerHTML = '';
-        
-        // Jika tidak ada tamu sama sekali
+
         if (guests.length === 0) {
             guestList.innerHTML = `
                 <div class="empty-state">
@@ -23,13 +22,11 @@ document.addEventListener('DOMContentLoaded', function() {
             return;
         }
         
-        // Filter tamu berdasarkan input pencarian
         let filteredGuests = guests;
         if (filter) {
             filteredGuests = [];
             for (let i = 0; i < guests.length; i++) {
                 const guest = guests[i];
-                // Cek apakah nama atau pesan mengandung teks filter (case insensitive)
                 if (guest.name.toLowerCase().indexOf(filter.toLowerCase()) !== -1 || 
                     guest.message.toLowerCase().indexOf(filter.toLowerCase()) !== -1) {
                     filteredGuests.push(guest);
@@ -37,7 +34,6 @@ document.addEventListener('DOMContentLoaded', function() {
             }
         }
         
-        // Jika hasil filter kosong
         if (filteredGuests.length === 0) {
             guestList.innerHTML = `
                 <div class="empty-state">
@@ -49,8 +45,7 @@ document.addEventListener('DOMContentLoaded', function() {
             `;
             return;
         }
-        
-        // Tampilkan tamu yang telah difilter
+
         for (let i = 0; i < filteredGuests.length; i++) {
             const guest = filteredGuests[i];
             
@@ -79,7 +74,6 @@ document.addEventListener('DOMContentLoaded', function() {
         }
     }
     
-    // Fungsi untuk mendapatkan index asli di array guests
     function getOriginalIndex(guest) {
         for (let i = 0; i < guests.length; i++) {
             if (guests[i].timestamp === guest.timestamp) {
@@ -89,7 +83,6 @@ document.addEventListener('DOMContentLoaded', function() {
         return -1;
     }
     
-    // Fungsi untuk memformat tanggal
     function formatDate(date) {
         const options = {
             day: 'numeric',
@@ -101,7 +94,6 @@ document.addEventListener('DOMContentLoaded', function() {
         return date.toLocaleString('id-ID', options);
     }
     
-    // Fungsi sederhana untuk escape HTML (mencegah XSS)
     function escapeHtml(text) {
         const div = document.createElement('div');
         div.textContent = text;
@@ -163,8 +155,7 @@ document.addEventListener('DOMContentLoaded', function() {
             searchInput.value = '';
         }
     });
-    
-    // Fungsi untuk menampilkan notifikasi toast
+
     function showToast(message) {
         const toast = document.createElement('div');
         toast.className = 'toast success';
@@ -185,27 +176,56 @@ document.addEventListener('DOMContentLoaded', function() {
             }, 3000);
         }, 100);
     }  
+
+    // Kode untuk API Pexels (Gambar)
+    const API_KEY_PEXELS = 'qVUjdmMlBd8yhQcsuQM3b6VNKDNluck2kdkyhV5PcrbhMZGrvIoBgCen'; 
+    const query = 'pemandangan'; 
+    const perPage = 4;
+
+    fetch(`https://api.pexels.com/v1/search?query=${query}&per_page=${perPage}`, {
+      headers: {
+        Authorization: API_KEY_PEXELS
+      }
+    })
+    .then(response => response.json())
+    .then(data => {
+      const container = document.getElementById('media-containerr');
+      data.photos.forEach(photo => {
+        const img = document.createElement('img');
+        img.src = photo.src.medium;
+        img.alt = photo.photographer;
+        container.appendChild(img);
+      });
+    })
+    .catch(error => {
+      console.error('Gagal ambil gambar dari Pexels:', error);
+    });
 });
 
-const API_KEY = 'qVUjdmMlBd8yhQcsuQM3b6VNKDNluck2kdkyhV5PcrbhMZGrvIoBgCen'; 
-const query = 'pemandangan'; 
-const perPage = 4;
+const container = document.getElementById("text-container");
 
-fetch(`https://api.pexels.com/v1/search?query=${query}&per_page=${perPage}`, {
-  headers: {
-    Authorization: API_KEY
-  }
-})
-.then(response => response.json())
-.then(data => {
-  const container = document.getElementById('image-containerr');
-  data.photos.forEach(photo => {
-    const img = document.createElement('img');
-    img.src = photo.src.medium;
-    img.alt = photo.photographer;
-    container.appendChild(img);
-  });
-})
-.catch(error => {
-  console.error('Gagal ambil gambar dari Pexels:', error);
-});
+      fetch("https://openrouter.ai/api/v1/chat/completions", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          "Authorization": "Bearer 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"
+        },
+        body: JSON.stringify({
+          model: "openai/gpt-3.5-turbo",
+          messages: [{ role: "user", content: "Buatkan cerita tentang naga dan ksatria" }],
+        })
+      })
+      .then(res => res.json())
+      .then(data => {
+        if (data.choices && data.choices.length > 0) {
+          const reply = data.choices[0].message.content;
+          container.innerText = reply;
+        } else {
+          container.innerText = "Gagal mendapatkan cerita dari API.";
+          console.error("Struktur data tidak sesuai:", data);
+        }
+      })
+      .catch(err => {
+        container.innerText = "Terjadi kesalahan saat menghubungi API.";
+        console.error(err);
+      });
